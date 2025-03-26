@@ -13,7 +13,7 @@ interface MenuItemCardProps {
   item: MenuItem;
 }
 
-const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
+export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   const { addToCart } = useCart();
 
   const handleAddToCart = () => {

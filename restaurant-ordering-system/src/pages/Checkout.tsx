@@ -1,88 +1,122 @@
+// src/pages/CheckoutPage.tsx
 import React, { useState } from "react";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/CartContext"; // Import CartContext hook
 import { Link } from "react-router-dom";
 
-const Checkout = () => {
-  const { cart, removeFromCart } = useCart();
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("credit-card");
+const CheckoutPage: React.FC = () => {
+  const { cartItems, clearCart } = useCart(); // Access Cart Context
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    address: "",
+    phone: "",
+  });
+  const [isOrderPlaced, setIsOrderPlaced] = useState(false);
 
-  // Calculate the total price
-  const calculateTotal = () => {
-    return cart.reduce((total, item) => total + item.item.price * item.quantity, 0);
+  // Calculate total price
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+
+  // Handle form input changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  // Handle form submission (order submission)
+  // Handle form submission (simulate order placement)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here, you would typically send the order details to a backend API
-    // For now, let's just clear the cart and log the order to the console
-    console.log("Order Submitted:", { name, address, paymentMethod, cart });
-    // Clear the cart after order is placed
-    cart.forEach((item) => removeFromCart(item.item.id));
-    alert("Order placed successfully!");
+    // Simulate order placement
+    setIsOrderPlaced(true);
+    clearCart(); // Clear the cart after order is placed
   };
 
   return (
-    <div className="checkout-container">
+    <div className="checkout-page">
       <h1>Checkout</h1>
 
-      {cart.length === 0 ? (
-        <p>Your cart is empty. <Link to="/menu">Go back to the menu</Link></p>
+      {isOrderPlaced ? (
+        <div className="order-confirmation">
+          <h2>Thank you for your order!</h2>
+          <p>Your order has been successfully placed. We will contact you soon!</p>
+          <Link to="/">Go back to Home</Link>
+        </div>
       ) : (
         <div>
-          <h2>Order Summary</h2>
-          <div className="checkout-items">
-            {cart.map((cartItem) => (
-              <div key={cartItem.item.id} className="checkout-item">
-                <img
-                  src={cartItem.item.image}
-                  alt={cartItem.item.name}
-                  className="checkout-item-image"
-                />
-                <div>
-                  <h3>{cartItem.item.name}</h3>
-                  <p>${cartItem.item.price.toFixed(2)}</p>
-                  <p>Quantity: {cartItem.quantity}</p>
-                  <button onClick={() => removeFromCart(cartItem.item.id)}>Remove</button>
-                </div>
-              </div>
-            ))}
+          <div className="cart-summary">
+            <h2>Cart Summary</h2>
+            <ul>
+              {cartItems.map((item) => (
+                <li key={item.id}>
+                  <img src={item.image} alt={item.name} />
+                  <div>
+                    <p>{item.name}</p>
+                    <p>
+                      {item.quantity} x ${item.price.toFixed(2)}
+                    </p>
+                    <p>
+                      ${ (item.price * item.quantity).toFixed(2) }
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="total-price">
+              <p>Total: ${totalPrice.toFixed(2)}</p>
+            </div>
           </div>
 
-          <div className="total-container">
-            <p>Total: ${calculateTotal().toFixed(2)}</p>
-          </div>
+          <form onSubmit={handleSubmit} className="billing-form">
+            <h2>Billing Information</h2>
 
-          <form onSubmit={handleSubmit} className="checkout-form">
-            <h2>Customer Information</h2>
-            <label htmlFor="name">Name:</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-            <label htmlFor="address">Address:</label>
-            <input
-              type="text"
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-            <label htmlFor="payment-method">Payment Method:</label>
-            <select
-              id="payment-method"
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              required
-            >
-              <option value="credit-card">Credit Card</option>
-              <option value="paypal">PayPal</option>
-            </select>
+            <label>
+              Name:
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            <label>
+              Email:
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            <label>
+              Address:
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            <label>
+              Phone:
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
             <button type="submit">Place Order</button>
           </form>
         </div>
@@ -91,4 +125,4 @@ const Checkout = () => {
   );
 };
 
-export default Checkout;
+export default CheckoutPage;

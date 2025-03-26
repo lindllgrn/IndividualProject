@@ -4,17 +4,6 @@ import { Link } from 'react-router-dom';
 const HomePage: React.FC = () => {
   return (
     <div className="home-page">
-      {/* Header */}
-      <header className="header">
-        <div className="logo">
-          <h1>La Bella Cucina</h1>
-        </div>
-        <nav className="nav">
-          <Link to="/menu">Menu</Link>
-          <Link to="/order">Order Now</Link>
-          <Link to="/contact">Contact</Link>
-        </nav>
-      </header>
 
       {/* Hero Section */}
       <section className="hero">

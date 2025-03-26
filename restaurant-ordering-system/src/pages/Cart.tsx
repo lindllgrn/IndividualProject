@@ -1,38 +1,56 @@
-import { useCart } from "../context/CartContext";
+// src/pages/CartPage.tsx
+import { Link } from "react-router-dom";
+import React from "react";
+import { useCart } from "../context/CartContext"; // Import the custom useCart hook
 
-const Cart = () => {
-  const { cart, removeFromCart, clearCart, archiveOrder } = useCart();
+const CartPage: React.FC = () => {
+  const { cartItems, removeFromCart, updateQuantity } = useCart(); // Access cart context
+  
+  // Debugging cartItems
+  console.log("Cart Items: ", cartItems);
 
-  const handleCheckout = () => {
-    // Here, archive the current cart and clear it afterward
-    archiveOrder(cart);
-    clearCart();
-    // Proceed to checkout logic
+  const handleRemove = (id: number) => {
+    removeFromCart(id);
+  };
+
+  const handleQuantityChange = (id: number, change: number) => {
+    updateQuantity(id, change); // Update quantity using the context method
+  };
+
+  const calculateTotal = () => {
+    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2);
   };
 
   return (
-    <div className="cart-container">
+    <div className="cart-page">
       <h1>Your Cart</h1>
-      {cart.length === 0 ? (
-        <p>Your cart is empty. <a href="/menu">Go back to the menu</a></p>
+      {cartItems.length === 0 ? (
+        <p>Your cart is empty. Start adding items!</p>
       ) : (
-        <div>
-          {cart.map((cartItem) => (
-            <div key={cartItem.item.id} className="cart-item">
-              <img src={cartItem.item.image} alt={cartItem.item.name} />
-              <div>
-                <h3>{cartItem.item.name}</h3>
-                <p>Quantity: {cartItem.quantity}</p>
-                <p>Price: ${cartItem.item.price.toFixed(2)}</p>
+        <div className="cart-items">
+          {cartItems.map((cartItem) => (
+            <div key={cartItem.id} className="cart-item">
+              <img src={cartItem.image} alt={cartItem.name} />
+              <div className="cart-item-details">
+                <h3>{cartItem.name}</h3>
+                <p>${cartItem.price.toFixed(2)}</p>
+                <div className="quantity-controls">
+                  <button onClick={() => handleQuantityChange(cartItem.id, -1)}>-</button>
+                  <span>{cartItem.quantity}</span>
+                  <button onClick={() => handleQuantityChange(cartItem.id, 1)}>+</button>
+                </div>
+                <button className="remove-item" onClick={() => handleRemove(cartItem.id)}>Remove</button>
               </div>
-              <button onClick={() => removeFromCart(cartItem.item.id)}>Remove</button>
             </div>
           ))}
-          <button onClick={handleCheckout}>Proceed to Checkout</button>
         </div>
       )}
+      <div className="cart-summary">
+        <h2>Total: ${calculateTotal()}</h2>
+        <Link to="/checkout" className="proceed-to-checkout">Proceed to Checkout</Link>
+      </div>
     </div>
   );
 };
 
-export default Cart;
+export default CartPage;

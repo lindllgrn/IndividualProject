@@ -1,0 +1,77 @@
+# https://code.visualstudio.com/api/working-with-extensions/continuous-integration
+
+name: Node CI
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        ref: ${{ github.ref }}
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: "yarn"
+    - env:
+        CXX: "g++-4.9"
+        CC: "gcc-4.9"
+        DISPLAY: ":99.0"
+      run: |
+        /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        yarn
+
+    - name: type check
+      run: |
+        yarn run test:tsc
+
+    - name: test
+      env:
+        CXX: "g++-4.9"
+        CC: "gcc-4.9"
+        DISPLAY: ":99.0"
+        JEST_CI: "true"
+      run: |
+        yarn test
+        yarn test:insiders --no-coverage
+
+    - name: build
+      env:
+        CXX: "g++-4.9"
+        CC: "gcc-4.9"
+        DISPLAY: ":99.0"
+        JEST_CI: "true"
+      run: |
+        yarn run build
+        yarn run pack:all
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: VSIX packages
+        path: ./*.vsix
+
+    - name: 'Upload coverage'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage.tar
+        path: ./coverage
+        retention-days: 2
+
+    # - uses: codecov/codecov-action@v3
+    #   if: github.repository == 'mtxr/vscode-sqltools'
+    #   with:
+    #     flags: "extension"

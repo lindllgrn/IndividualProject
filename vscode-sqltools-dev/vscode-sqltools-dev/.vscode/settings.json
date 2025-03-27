@@ -1,0 +1,19 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+  "eslint.enable": true,
+  "files.exclude": {
+    "**/dist": false,
+    "docs": true,
+    "packages": false,
+  },
+  "files.watcherExclude": {
+    "**/dist": true,
+    "docs": true,
+    "packages": false,
+  },
+  "search.exclude": {
+    "**/dist": true,
+    "docs": true,
+    "packages": false,
+  }
+}

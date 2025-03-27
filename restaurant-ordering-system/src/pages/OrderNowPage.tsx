@@ -1,5 +1,4 @@
-// src/pages/OrderNowPage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext"; // Import the custom useCart hook
 import { menuItems } from "../data/menu"; // Assuming you have a menu data file
@@ -10,6 +9,38 @@ const OrderNowPage: React.FC = () => {
   const { addToCart, cartItems } = useCart(); // Access Cart Context
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
   const [modalMessage, setModalMessage] = useState(""); // State for modal message
+  const [socket, setSocket] = useState<WebSocket | null>(null); // WebSocket state
+
+  // WebSocket setup
+  useEffect(() => {
+    const socketConnection = new WebSocket('ws://localhost:8080');
+
+    socketConnection.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    socketConnection.onmessage = (event) => {
+      console.log('Message from server:', event.data);
+      // Handle real-time updates here, such as new orders or changes to the order status
+      const message = JSON.parse(event.data);
+      if (message.type === 'new_order') {
+        // Optionally, update the UI with the new order or refresh the order list
+        console.log('New order received:', message.order);
+      }
+    };
+
+    socketConnection.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    // Store the socket instance in state
+    setSocket(socketConnection);
+
+    // Clean up WebSocket connection when the component unmounts
+    return () => {
+      socketConnection.close();
+    };
+  }, []); // Empty dependency array to only run once when the component mounts
 
   // Handle adding items to cart
   const handleAddToCart = (item: any) => {
@@ -26,12 +57,17 @@ const OrderNowPage: React.FC = () => {
   const handleSubmitOrder = async () => {
     try {
       const orderDate = new Date().toISOString();
-      console.log("Submitting order...");
+      console.log("Formatted Date:", orderDate);
+
+
+      // Calculate the total amount by summing the prices of the items in the cart
+      const totalAmount = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   
       const newOrder = {
         customer_id: 1, // Replace with logged-in user's ID
-        order_date: orderDate,
+        order_date: orderDate, // Use the properly formatted date
         status: "Pending",
+        total_amount: totalAmount, // Add total_amount here
       };
   
       console.log("New order:", newOrder);
@@ -59,12 +95,30 @@ const OrderNowPage: React.FC = () => {
   
       setModalMessage("Your order has been placed!");
       setIsModalOpen(true);
+  
+      // Send a real-time message to the server via WebSocket after placing the order
+      if (socket) {
+        socket.send(JSON.stringify({ orderId, status: 'Order Placed', details: newOrder }));
+      }
+  
     } catch (error) {
       console.error("Error submitting order:", error);
-      setModalMessage("Something went wrong. Please try again.");
+      if (axios.isAxiosError(error)) {
+        console.error("Axios error response:", error.response);
+        setModalMessage(`Something went wrong: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      } else if (error instanceof Error) {
+        setModalMessage(`Something went wrong: ${error.message}`);
+      } else {
+        setModalMessage('Something went wrong: Unknown error');
+      }
       setIsModalOpen(true);
     }
   };
+  
+  
+  
+  
+  
   
 
   return (

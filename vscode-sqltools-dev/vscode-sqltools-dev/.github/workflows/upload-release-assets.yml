@@ -1,0 +1,61 @@
+# https://code.visualstudio.com/api/working-with-extensions/continuous-integration
+
+name: ReleaseAssets
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        ref: ${{ github.ref }}
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    - env:
+        CXX: "g++-4.9"
+        CC: "gcc-4.9"
+        DISPLAY: ":99.0"
+      run: |
+        /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        yarn
+        yarn global add @vscode/vsce
+
+    - name: create package
+      env:
+        HUSKY_SKIP_INSTALL: "true"
+        CXX: "g++-4.9"
+        CC: "gcc-4.9"
+        DISPLAY: ":99.0"
+      run: |
+        yarn run pack:all
+
+    - name: Upload to Release
+      uses: OmgImAlexis/upload-to-release@12da88e9f14252a5232be13ee9aadda64637c271
+      with:
+        args: "*.vsix"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload to VSCode Marketplace and Open-VSX
+      env:
+        OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      run: |
+        for FILE in *.vsix; do
+          echo "Publishing $FILE"
+          npx vsce publish --skip-duplicate --packagePath $FILE
+          npx ovsx publish --skip-duplicate $FILE -p $OVSX_TOKEN
+          echo "Published $FILE"
+        done

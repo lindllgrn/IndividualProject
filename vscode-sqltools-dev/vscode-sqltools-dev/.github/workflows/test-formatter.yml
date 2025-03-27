@@ -1,0 +1,58 @@
+name: Formatter Test & Build
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        ref: ${{ github.ref }}
+
+    - uses: actions/cache@v4
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    - env:
+        HUSKY_SKIP_INSTALL: "true"
+      run: |
+        yarn
+
+    - name: type check
+      run: |
+        yarn run test:tsc
+
+    - name: test & build
+      env:
+        HUSKY_SKIP_INSTALL: "true"
+      run: |
+        cd packages/formatter
+        yarn
+        yarn pack
+
+    - name: 'Upload tgz'
+      uses: actions/upload-artifact@v4
+      with:
+        name: package
+        path: ./packages/formatter/*.tgz
+
+    # - uses: codecov/codecov-action@v3
+    #   if: github.repository == 'mtxr/vscode-sqltools'
+    #   with:
+    #     flags: "formatter"

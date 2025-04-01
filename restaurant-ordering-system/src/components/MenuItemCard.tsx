@@ -1,42 +1,25 @@
+// MenuItemCard.tsx
 import React from 'react';
-import CartItem, { useCart } from '../context/CartContext';
+import { MenuItem } from '../types';
 
-export interface MenuItem {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-}
-
+// Define the types for the props passed to MenuItemCard
 interface MenuItemCardProps {
   item: MenuItem;
+  onAddToCart: (item: MenuItem) => void; // onAddToCart prop function
 }
 
-export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
-  const { addToCart } = useCart();
-
-  const handleAddToCart = () => {
-    // Pass the entire item object and its image directly
-    const cartItem: CartItem = {
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: 1, // Default to 1 for initial quantity
-      item, // Pass the entire item as part of the CartItem
-      image: item.image, // Ensure image is included
-    };
-
-    addToCart(cartItem); // Call addToCart with the correct CartItem structure
-  };
-
+const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onAddToCart }) => {
+  const price = parseFloat(item.price.toString());
+  // If price is NaN, default to 0.00
+  const formattedPrice = isNaN(price) ? 0.00 : price.toFixed(2);
+  
   return (
     <div className="menu-item-card">
       <img src={item.image} alt={item.name} />
       <h3>{item.name}</h3>
       <p>{item.description}</p>
-      <p className="price">${item.price.toFixed(2)}</p>
-      <button onClick={handleAddToCart}>Add to Cart</button>
+      <p>${formattedPrice}</p> {/* Display formatted price */}
+      <button onClick={() => onAddToCart(item)}>Add to Cart</button>
     </div>
   );
 };

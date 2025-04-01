@@ -1,4 +1,3 @@
-// src/pages/CheckoutPage.tsx
 import React, { useState } from "react";
 import { useCart } from "../context/CartContext"; // Import CartContext hook
 import { Link } from "react-router-dom";
@@ -15,7 +14,10 @@ const CheckoutPage: React.FC = () => {
 
   // Calculate total price
   const totalPrice = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) => {
+      const price = parseFloat(item.price.toString()); // Ensure price is a number
+      return total + (isNaN(price) ? 0 : price * item.quantity);
+    },
     0
   );
 
@@ -27,12 +29,41 @@ const CheckoutPage: React.FC = () => {
     });
   };
 
-  // Handle form submission (simulate order placement)
-  const handleSubmit = (e: React.FormEvent) => {
+  // Handle form submission (simulate order placement and update database)
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate order placement
-    setIsOrderPlaced(true);
-    clearCart(); // Clear the cart after order is placed
+
+    // Create order object to send to the backend
+    const order = {
+      customer: formData,
+      items: cartItems,
+      totalPrice,
+    };
+
+    try {
+      // Send the order to the backend (using the POST method)
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(order), // Send the order data
+      });
+
+      // Check if the order was successfully placed
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data.message); // Success message from backend
+
+        setIsOrderPlaced(true);
+        clearCart(); // Clear the cart after order is placed
+      } else {
+        // Handle error
+        console.error('Error placing order');
+      }
+    } catch (error) {
+      console.error('Failed to place order:', error);
+    }
   };
 
   return (
@@ -50,20 +81,26 @@ const CheckoutPage: React.FC = () => {
           <div className="cart-summary">
             <h2>Cart Summary</h2>
             <ul>
-              {cartItems.map((item) => (
-                <li key={item.id}>
-                  <img src={item.image} alt={item.name} />
-                  <div>
-                    <p>{item.name}</p>
-                    <p>
-                      {item.quantity} x ${item.price.toFixed(2)}
-                    </p>
-                    <p>
-                      ${ (item.price * item.quantity).toFixed(2) }
-                    </p>
-                  </div>
-                </li>
-              ))}
+              {cartItems.map((item) => {
+                // Ensure price is a valid number before formatting
+                const price = parseFloat(item.price.toString());
+                const formattedPrice = isNaN(price) ? 0.00 : price.toFixed(2);
+
+                return (
+                  <li key={item.id}>
+                    <img src={item.image} alt={item.name} />
+                    <div>
+                      <p>{item.name}</p>
+                      <p>
+                        {item.quantity} x ${formattedPrice}
+                      </p>
+                      <p>
+                        ${((price * item.quantity) || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
             <div className="total-price">
               <p>Total: ${totalPrice.toFixed(2)}</p>

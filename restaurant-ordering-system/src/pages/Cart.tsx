@@ -1,4 +1,3 @@
-// src/pages/CartPage.tsx
 import { Link } from "react-router-dom";
 import React from "react";
 import { useCart } from "../context/CartContext"; // Import the custom useCart hook
@@ -18,7 +17,9 @@ const CartPage: React.FC = () => {
   };
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2);
+    return cartItems
+      .reduce((total, cartItem) => total + cartItem.price * cartItem.quantity, 0)
+      .toFixed(2);
   };
 
   return (
@@ -28,21 +29,28 @@ const CartPage: React.FC = () => {
         <p>Your cart is empty. Start adding items!</p>
       ) : (
         <div className="cart-items">
-          {cartItems.map((cartItem) => (
-            <div key={cartItem.id} className="cart-item">
-              <img src={cartItem.image} alt={cartItem.name} />
-              <div className="cart-item-details">
-                <h3>{cartItem.name}</h3>
-                <p>${cartItem.price.toFixed(2)}</p>
-                <div className="quantity-controls">
-                  <button onClick={() => handleQuantityChange(cartItem.id, -1)}>-</button>
-                  <span>{cartItem.quantity}</span>
-                  <button onClick={() => handleQuantityChange(cartItem.id, 1)}>+</button>
+          {cartItems.map((cartItem) => {
+            // Ensure the price is a valid number
+            const price = parseFloat(cartItem.price.toString());
+            const formattedPrice = isNaN(price) ? 0.00 : price.toFixed(2);
+
+            return (
+              <div key={cartItem.id} className="cart-item">
+                <img src={cartItem.image} alt={cartItem.name} />
+                <div className="cart-item-details">
+                  <h3>{cartItem.name}</h3>
+                  {/* Use formattedPrice instead of item.price */}
+                  <p>${formattedPrice}</p>
+                  <div className="quantity-controls">
+                    <button onClick={() => handleQuantityChange(cartItem.id, -1)}>-</button>
+                    <span>{cartItem.quantity}</span>
+                    <button onClick={() => handleQuantityChange(cartItem.id, 1)}>+</button>
+                  </div>
+                  <button className="remove-item" onClick={() => handleRemove(cartItem.id)}>Remove</button>
                 </div>
-                <button className="remove-item" onClick={() => handleRemove(cartItem.id)}>Remove</button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       <div className="cart-summary">

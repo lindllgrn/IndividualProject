@@ -39,7 +39,9 @@ wss.on('connection', (ws) => {
     console.log('Received message:', message);
   });
 
-  ws.send('Hello from server!');
+  app.get('/', (req, res) => {
+    res.json({ message: 'Hello from server!' }); // ✅ Change to JSON format
+  });
 });
 
 // Root route to check if the server is running
@@ -76,24 +78,70 @@ app.post('/api/orders', express.json(), (req, res) => {
   });
 });
 
-
-// API endpoint to add order items (POST)
-app.post('/api/order_items', express.json(), (req, res) => {
-  const { order_id, menu_item_id, quantity, price, special_instructions } = req.body;
-  const created_at = new Date().toISOString(); // Set created_at to current time
-
-  const query = `
-    INSERT INTO order_items (order_id, menu_item_id, quantity, price, special_instructions, created_at)
-    VALUES (?, ?, ?, ?, ?, ?)`;
-
-  db.query(query, [order_id, menu_item_id, quantity, price, special_instructions, created_at], (err, result) => {
-    if (err) {
-      console.error('Error inserting order item:', err);
-      return res.status(500).json({ message: 'Error inserting order item' });
-    }
-    res.status(201).json({ message: 'Order item inserted successfully', order_item_id: result.insertId });
-  });
+// GET all menu items
+app.get('/api/menu', async (req, res) => { 
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT 
+        menu_item_id AS id, 
+        name, 
+        description, 
+        CAST(price AS DECIMAL(10,2)) AS price, 
+        image_url AS image 
+      FROM menu_items
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
+
+// API to fetch order items
+app.post('/api/order_items', async (req, res) => {
+  const { order_id, menu_item_id, quantity, price, special_instructions } = req.body;
+  const created_at = new Date().toISOString();
+
+  if (!order_id || !menu_item_id || !quantity || !price) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const [result] = await db.promise().query(
+      `INSERT INTO order_items (order_id, menu_item_id, quantity, price, special_instructions, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [order_id, menu_item_id, quantity, price, special_instructions || '', created_at]
+    );
+
+    res.status(201).json({ message: 'Order item added successfully', order_item_id: result.insertId });
+  } catch (error) {
+    console.error('Error inserting order item:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.put('/api/order_items/:order_item_id', async (req, res) => {
+  const { order_item_id } = req.params;
+  const { quantity, price, special_instructions } = req.body;
+  const updated_at = new Date().toISOString();
+
+  try {
+    const [result] = await db.promise().query(
+      `UPDATE order_items SET quantity = ?, price = ?, special_instructions = ?, updated_at = ? WHERE order_item_id = ?`,
+      [quantity, price, special_instructions || '', updated_at, order_item_id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Order item not found' });
+    }
+
+    res.json({ message: 'Order item updated successfully' });
+  } catch (error) {
+    console.error('Error updating order item:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 
 // Start the server
 app.listen(port, () => {

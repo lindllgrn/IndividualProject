@@ -1,14 +1,17 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+/* eslint-disable react-refresh/only-export-components */
 // src/context/CartContext.tsx
 import React, { createContext, useContext, useState } from "react";
-import { MenuItem } from "../components/MenuItemCard.tsx";
+import { MenuItem } from "../types"; // Import the MenuItem type
 
 // Define the CartItem interface
-export default interface CartItem {
+export default interface CartItem extends MenuItem {
   id: number;
   name: string;
   price: number;
   image: string;
   item: MenuItem;
+  description: string;
   specialInstructions?: string;  // Add this line for special instructions
   quantity: number;
 }

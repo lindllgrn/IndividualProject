@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
-import { menuItems } from "./data/menu";
 import { CartProvider } from "./context/CartContext"; // Import CartProvider
 import HomePage from "./pages/HomePage";
 import MenuPage from "./pages/MenuPage";
@@ -26,7 +25,7 @@ const App = () => {
 
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/menu" element={<MenuPage menuItems={menuItems} />} />
+          <Route path="/menu" element={<MenuPage />} />
           <Route path="/order" element={<OrderNowPage />} /> {/* Add the OrderNowPage route */}
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
